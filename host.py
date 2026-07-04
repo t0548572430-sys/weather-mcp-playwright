@@ -3,6 +3,7 @@ import asyncio
 import os
 import sys
 
+import anthropic
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
@@ -82,12 +83,19 @@ class Host:
             if not query or query.lower() in ("quit", "exit"):
                 break
             messages.append({"role": "user", "content": query})
-            await self.process_query(messages)
+            try:
+                await self.process_query(messages)
+            except anthropic.APIError as e:
+                print(f"API error: {e.message}")
+                messages.pop()  # drop the failed turn so the conversation stays valid
             print()
 
     async def close(self):
         for client in self.clients:
-            await client.close()
+            try:
+                await client.close()
+            except (Exception, asyncio.CancelledError):
+                pass  # ponytail: mcp stdio teardown is noisy on Windows; we're exiting anyway
 
 
 async def main():
