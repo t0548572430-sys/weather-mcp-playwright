@@ -64,8 +64,9 @@ class Host:
             )
             contents.append(response.candidates[0].content)
 
-            if response.text:
-                print(response.text)
+            text = "".join(p.text for p in response.candidates[0].content.parts if p.text)
+            if text:
+                print(text)
             if not response.function_calls:
                 return
 
