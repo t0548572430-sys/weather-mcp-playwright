@@ -1,73 +1,73 @@
-# 🌦️ Weather MCP — ישראל בדפדפן, ארה"ב ב-API
+# 🌦️ Weather MCP — Israel via Browser Automation, USA via API
 
-פרויקט MCP (Model Context Protocol) שמדגים שתי דרכים להרחיב את הקונטקסט של LLM עם מידע מזג אוויר עדכני:
+An MCP (Model Context Protocol) project demonstrating two ways to extend an LLM's context with live weather data:
 
-- **`weather_USA.py`** — MCP Server "קלאסי": שולף תחזית והתראות מ-API של שירות מזג האוויר האמריקאי (api.weather.gov).
-- **`weather_Israel.py`** — MCP Server ששם ל-LLM יד על העכבר 🖱️: פותח דפדפן אמיתי עם **Playwright**, גולש ל-[weather2day.co.il](https://www.weather2day.co.il/forecast), מקליד שם עיר בשדה החיפוש, בוחר אותה מהרשימה הנפתחת — ומחלץ את תוכן הדף כדי שה-LLM יענה על השאלה בעצמו (RAG).
+- **`weather_USA.py`** — a "classic" MCP server: fetches forecasts and alerts from the US National Weather Service API (api.weather.gov).
+- **`weather_Israel.py`** — an MCP server that puts the LLM's hand on the mouse 🖱️: it launches a real Chromium browser with **Playwright**, navigates to [weather2day.co.il](https://www.weather2day.co.il/forecast), types a city name into the search box, picks it from the autocomplete list — and extracts the page content so the LLM can answer the question itself (RAG).
 
-## 🧩 מבנה הפרויקט
+## 🧩 Project Structure
 
 ```
-├── client.py          # MCP Client גנרי — מתחבר לכל שרת MCP דרך stdio
-├── host.py            # צ'אט טרמינל: מחבר את Gemini לכל שרתי ה-MCP
-├── weather_USA.py     # MCP Server לתחזית בארה"ב (API)
-├── weather_Israel.py  # MCP Server לתחזית בישראל (Playwright)
-└── test_israel_flow.py # בדיקת עשן לזרימה הישראלית המלאה
+├── client.py           # Generic MCP client — connects to any MCP server over stdio
+├── host.py             # Terminal chat: connects Gemini to all MCP servers
+├── weather_USA.py      # MCP server for US forecasts (API)
+├── weather_Israel.py   # MCP server for Israeli forecasts (Playwright)
+└── test_israel_flow.py # Smoke test for the full Israeli flow
 ```
 
-### ה-Tools של השרת הישראלי
+### The Israeli Server's Tools
 
-| Tool | מה הוא עושה |
+| Tool | What it does |
 |---|---|
-| `open_weather_forecast_israel` | פותח דפדפן ומנווט לדף התחזית |
-| `enter_weather_forecast_city_israel` | מקליד שם עיר בשדה החיפוש (ומדווח על ההשלמות) |
-| `select_weather_forecast_city_israel` | בוחר את הפריט הראשון ברשימת הערים |
-| `get_weather_forecast_content_israel` | מחלץ את תוכן דף התחזית ומזרים אותו ל-LLM |
+| `open_weather_forecast_israel` | Opens a browser and navigates to the forecast page |
+| `enter_weather_forecast_city_israel` | Types a city name into the search field (and reports the suggestions) |
+| `select_weather_forecast_city_israel` | Selects the first item in the autocomplete list |
+| `get_weather_forecast_content_israel` | Extracts the forecast page content and feeds it to the LLM |
 
-## 🚀 התקנה והרצה
+## 🚀 Setup & Run
 
-דרישות מקדימות: Python 3.11+, [uv](https://docs.astral.sh/uv/).
+Prerequisites: Python 3.11+, [uv](https://docs.astral.sh/uv/).
 
 ```bash
-# 1. התקנת תלויות
+# 1. Install dependencies
 uv sync
 
-# 2. התקנת דפדפן כרומיום עבור Playwright
+# 2. Install Chromium for Playwright
 uv run playwright install chromium
 
-# 3. מפתח API של Gemini (חינמי, בלי כרטיס אשראי) — https://aistudio.google.com/apikey
-copy .env.example .env    # ולערוך: GEMINI_API_KEY=...
+# 3. Gemini API key (free, no credit card) — https://aistudio.google.com/apikey
+copy .env.example .env    # then edit: GEMINI_API_KEY=...
 
-# 4. הרצת הצ'אט
+# 4. Run the chat
 uv run host.py
 ```
 
-לבדיקה מהירה של השרת הישראלי בלי LLM:
+Quick check of the Israeli server without an LLM:
 
 ```bash
 uv run test_israel_flow.py
 ```
 
-## 💬 דוגמאות לשאלות
+## 💬 Example Questions
 
-- `מה התחזית להיום בתל אביב?`
-- `כדאי לקחת מטריה מחר בירושלים?`
-- `מה מזג האוויר בחיפה בסוף השבוע?`
-- `What's the forecast in Chicago?` (יופנה לשרת האמריקאי)
+- `מה התחזית להיום בתל אביב?` (What's today's forecast in Tel Aviv?)
+- `כדאי לקחת מטריה מחר בירושלים?` (Should I take an umbrella tomorrow in Jerusalem?)
+- `מה מזג האוויר בחיפה בסוף השבוע?` (What's the weather in Haifa this weekend?)
+- `What's the forecast in Chicago?` (routed to the US server)
 - `Are there weather alerts in California?`
 
-בזמן שהשאלה מעובדת תראו את הדפדפן נפתח, מקליד את שם העיר ובוחר אותה מהרשימה — ואז המודל עונה על סמך תוכן הדף.
+While the question is being processed you'll see the browser open, type the city name, and select it from the list — then the model answers based on the page content.
 
-## ⚙️ איך זה עובד
+## ⚙️ How It Works
 
-1. **Host** (`host.py`) מריץ כל שרת MCP כתהליך-בן ופותח מולו session דרך stdio (באמצעות ה-**Client** הגנרי ב-`client.py`).
-2. ה-Host מגלה את ה-Tools של כל שרת ומצרף אותם לכל קריאה ל-LLM (Gemini).
-3. כשהמודל מזהה שאלה על מזג אוויר בישראל, הוא מפעיל את ארבעת ה-Tools בזה אחר זה: פתיחת דפדפן ← הקלדת עיר ← בחירה מהרשימה ← חילוץ תוכן.
-4. תוכן הדף חוזר למודל כ-tool result, והוא מנסח מתוכו תשובה — RAG על דף אינטרנט חי.
+1. The **Host** (`host.py`) launches each MCP server as a child process and opens a stdio session with it (via the generic **Client** in `client.py`).
+2. The Host discovers each server's tools and attaches them to every LLM (Gemini) call.
+3. When the model detects a question about weather in Israel, it invokes the four tools one after another: open browser → type city → select from list → extract content.
+4. The page content comes back to the model as a tool result, and it composes an answer from it — RAG over a live web page.
 
-## 🔗 חיבור לאפליקציות אחרות (למשל ChatBox)
+## 🔗 Connecting to Other Hosts (e.g. ChatBox)
 
-אפשר לחבר את השרת לכל Host תומך MCP עם פקודה כזו:
+The MCP servers are host-agnostic. Connect one to any MCP-capable app with a command like:
 
 ```
 uv --directory C:\path\to\project run weather_Israel.py
