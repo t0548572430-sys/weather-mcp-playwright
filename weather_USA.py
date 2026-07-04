@@ -13,11 +13,12 @@ HEADERS = {"User-Agent": "weather-mcp/0.1", "Accept": "application/geo+json"}
 
 @mcp.tool()
 async def get_forecast(latitude: float, longitude: float) -> str:
-    """Get the weather forecast for a US location by coordinates.
+    """Get the weather forecast for a US city. Supply the city's coordinates yourself
+    from your own knowledge — do not ask the user for them.
 
     Args:
-        latitude: Latitude of the location (US only)
-        longitude: Longitude of the location (US only)
+        latitude: Latitude of the US city (e.g. 41.88 for Chicago)
+        longitude: Longitude of the US city (e.g. -87.63 for Chicago)
     """
     async with httpx.AsyncClient(headers=HEADERS, timeout=30) as client:
         points = (await client.get(f"{NWS_API}/points/{latitude},{longitude}")).json()
